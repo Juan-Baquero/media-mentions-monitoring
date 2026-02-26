@@ -46,7 +46,7 @@ export class AlertsService {
   async getChatResponse(getSummaryDto: GetSummaryDto): Promise<SummaryDto> {
     try {
       const prompt = `Genera un título separado por una línea nueva y un resumen en forma de noticia escrita en tercera persona,
-      el resumen máximo alrededor de 120 palabras. 
+      el resumen máximo alrededor de 120 palabras que sea coherente y bien redactado. 
       Asegúrate de que el resumen sea fiel a los hechos y no atribuya incorrectamente acciones o eventos a personas o entidades mencionadas en el texto.`;
 
       // return { title: 'Titulo', summary: prompt };
