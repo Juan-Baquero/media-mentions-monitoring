@@ -22,18 +22,7 @@ import { NotesModule } from './notes/notes.module';
       useFactory: async (configService: ConfigService) => ({
         type: 'mongodb',
         url: configService.get<string>('MONGODB_URI') + '/monitoring',
-        entities: [Alert, Note, Transcription],
-        synchronize: false,
-      }),
-      inject: [ConfigService],
-    }),
-    TypeOrmModule.forRootAsync({
-      name: 'config',
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        type: 'mongodb',
-        url: configService.get<string>('MONGODB_URI') + '/config',
-        entities: [Platform],
+        entities: [Alert, Note, Transcription, Platform],
         synchronize: false,
       }),
       inject: [ConfigService],

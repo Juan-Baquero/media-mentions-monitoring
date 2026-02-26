@@ -1,3 +1,11 @@
+# Radio Alert
+
+## Documentación
+
+- [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) — qué hace hoy el sistema, arquitectura, flujos principales, endpoints y variables de entorno.
+
+---
+
 # `Turborepo` Vite starter
 
 This is an official starter Turborepo.

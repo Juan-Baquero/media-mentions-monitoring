@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Platform } from '../entities';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Platform], 'config')],
+  imports: [TypeOrmModule.forFeature([Platform], 'monitoring')],
   controllers: [SettingsController],
   providers: [SettingsService],
 })

@@ -12,7 +12,7 @@ export class SettingsService {
   platformRepo: MongoRepository<Platform>;
 
   constructor(
-    @InjectDataSource('config') private readonly dataSource: DataSource,
+    @InjectDataSource('monitoring') private readonly dataSource: DataSource,
   ) {
     this.platformRepo = this.dataSource.getMongoRepository(Platform);
   }
