@@ -1,0 +1,30 @@
+name: Update Redirect Page
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update-redirect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get VITE_API variable
+        id: get_var
+        run: |
+          echo "url=$(gh variable get VITE_API --repo ${{ github.repository }} --json value | jq -r .value)" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update index.html
+        run: |
+          sed "s|__VITE_API__|${{ steps.get_var.outputs.url }}|g" docs/index.html > docs/index.html.tmp
+          mv docs/index.html.tmp docs/index.html
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add docs/index.html
+          git commit -m "Update redirect URL"
+          git push
