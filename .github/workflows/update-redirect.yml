@@ -7,15 +7,24 @@ jobs:
   update-redirect:
     runs-on: ubuntu-latest
     steps:
+      # 1. Clona la rama gh-pages
       - uses: actions/checkout@v4
         with:
           ref: gh-pages
 
+      # 2. Obtiene el archivo original desde main y lo sobreescribe en gh-pages
+      - name: Get original index.html from main
+        run: |
+          git fetch origin main
+          git checkout origin/main -- docs/index.html
+
+      # 3. Reemplaza el marcador por el valor del secret
       - name: Update index.html
         run: |
           sed "s|__VITE_API__|${{ secrets.VITE_API }}|g" docs/index.html > docs/index.html.tmp
           mv docs/index.html.tmp docs/index.html
 
+      # 4. Commit y push solo en gh-pages
       - name: Commit and push changes
         run: |
           git config user.name "github-actions"
