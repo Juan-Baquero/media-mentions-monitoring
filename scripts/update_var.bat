@@ -32,7 +32,7 @@ start /B cmd /c "cloudflared tunnel --url http://%IP_ADDRESS%:3001 > cloudflared
 timeout /t 5 /nobreak > nul
 
 :: Extract the URL from cloudflared_output.log using PowerShell
-for /f "tokens=*" %%i in ('powershell -Command "Select-String -Path 'cloudflared_output.log' -Pattern 'https.*\.com' | ForEach-Object { $_.Matches[0].Value }"') do set EXTRACTED_URL=%%i
+for /f "tokens=*" %%i in ('powershell -Command "Select-String -Path 'cloudflared_output.log' -Pattern 'https.*\.com' | ForEach-Object { if ($_.Matches[0].Value -notlike 'https://developers*') { $_.Matches[0].Value } }"') do set EXTRACTED_URL=%%i
 
 :: Display the extracted URL
 echo Extracted URL: %EXTRACTED_URL%
