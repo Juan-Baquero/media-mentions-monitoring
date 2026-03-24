@@ -50,5 +50,3 @@ gh variable set VITE_API_LOCAL --body "%VITE_API_LOCAL%" --repo rpt-monitoreo/ra
 gh workflow run deploy.ui.yml --repo rpt-monitoreo/radio-alert
 
 endlocal
-
-pnpm --prefix C:\Users\juanb\Documents\RADIO\radio-alert dev --filter=web-api
