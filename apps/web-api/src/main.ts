@@ -62,7 +62,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const globalPrefix = '';
   app.setGlobalPrefix(globalPrefix);
-  const port = configService.get<number>('BACK_PORT') || 3001;
+  const port = configService.get<number>('BACK_PORT') || 3000;
   await app.listen(port, '0.0.0.0');
 
   Logger.log(

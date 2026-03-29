@@ -13,6 +13,7 @@ import {
 } from "./appHelpers";
 import "./app.module.css";
 import Alerts from "../pages/alerts/Alerts";
+import NotesPage from "../pages/notes/NotesPage";
 
 function App() {
   const [pathname, setPathname] = useState("/admin/sub-page1");
@@ -56,10 +57,18 @@ function App() {
       >
         <Routes>
           <Route
+            path={"/notes"}
+            element={
+              <RouteCard>
+                <NotesPage />
+              </RouteCard>
+            }
+          />
+          <Route
             path={"/alerts"}
             element={
               <RouteCard>
-                <Alerts></Alerts>
+                <Alerts />
               </RouteCard>
             }
           />
