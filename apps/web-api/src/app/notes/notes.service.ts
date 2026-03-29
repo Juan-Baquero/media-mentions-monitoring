@@ -116,4 +116,27 @@ export class NotesService {
     }
     return wasSend;
   }
+
+  async importNotes(notes: NoteDto[]): Promise<{ inserted: number }> {
+    if (!Array.isArray(notes)) {
+      throw new Error('Input must be an array of notes');
+    }
+    // Filtrar notas duplicadas por combinación única
+    const insertedNotes: NoteDto[] = [];
+    for (const n of notes) {
+      const exists = await this.noteRepo.findOneBy({
+        title: n.title,
+        date: n.date,
+        media: n.media,
+        mediaName: n.mediaName,
+      });
+      if (!exists) {
+        insertedNotes.push(this.noteRepo.create(n));
+      }
+    }
+    if (insertedNotes.length > 0) {
+      await this.noteRepo.insertMany(insertedNotes);
+    }
+    return { inserted: insertedNotes.length };
+  }
 }

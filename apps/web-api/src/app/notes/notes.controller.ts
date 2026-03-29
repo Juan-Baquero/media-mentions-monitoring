@@ -41,4 +41,19 @@ export class NotesController {
       );
     }
   }
+
+  @Post('import-excel')
+  async importExcel(@Body() notes: NoteDto[]) {
+    try {
+      return await this.notesService.importNotes(notes);
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: `There was an error processing the request importExcel ${error}`,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

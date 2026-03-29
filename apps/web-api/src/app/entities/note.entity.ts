@@ -34,4 +34,49 @@ export class Note {
 
   @Column()
   message!: string;
+
+  @Column()
+  date!: string;
+
+  @Column()
+  media!: string;
+
+  @Column()
+  mediaName!: string;
+
+  @Column()
+  variables!: string;
+
+  @Column()
+  topic!: string;
+
+  @Column()
+  subtopics!: string;
+
+  @Column()
+  origin!: string;
+
+  @Column()
+  department!: string;
+
+  @Column()
+  zone!: string;
+
+  @Column()
+  rate!: string;
+
+  @Column()
+  sentiment!: string;
+
+  @Column()
+  value!: string;
+
+  @Column()
+  audience!: string;
+
+  @Column()
+  link!: string;
+
+  @Column()
+  source!: string;
 }
