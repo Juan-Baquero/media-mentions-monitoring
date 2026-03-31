@@ -157,7 +157,14 @@ const NotesTable: React.FC<NotesTableProps> = ({ selectedDates, notes }) => {
       title: "Medio",
       dataIndex: "media",
       key: "media",
-      ...getColumnSearchProps("media"),
+      filters: [
+        { text: "Prensa", value: "Prensa" },
+        { text: "Internet", value: "Internet" },
+        { text: "Televisión", value: "Televisión" },
+        { text: "Radio", value: "Radio" },
+      ],
+      onFilter: (value, record) =>
+        (record.media ?? "").includes(value as string),
       ellipsis: true,
       width: "120px",
     },

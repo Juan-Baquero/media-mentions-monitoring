@@ -318,7 +318,26 @@ const NotesPage: React.FC = () => {
           </Checkbox.Group>
         )}
       </Modal>
-      <h1>Notas</h1>
+      <h2>
+        Notas ({notes ? notes.length : 0})
+        {notes && notes.length > 0 && (
+          <span
+            style={{ fontWeight: "normal", fontSize: "1rem", marginLeft: 16 }}
+          >
+            {Array.from(
+              notes.reduce((acc, n) => {
+                const key = n.media || "Sin medio";
+                acc.set(key, (acc.get(key) || 0) + 1);
+                return acc;
+              }, new Map()),
+            ).map(([media, count]) => (
+              <span key={media} style={{ marginLeft: 8 }}>
+                {media} ({count})
+              </span>
+            ))}
+          </span>
+        )}
+      </h2>
       {isLoadingNotes ? (
         <div>Cargando notas...</div>
       ) : errorNotes ? (
