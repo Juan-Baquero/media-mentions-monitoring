@@ -10,6 +10,11 @@ export default {
     path: "/",
     routes: [
       {
+        path: "/dashboard",
+        name: "Dashboard",
+        icon: <CrownFilled />,
+      },
+      {
         path: "/notes",
         name: "Notas",
         icon: <TabletFilled />,
