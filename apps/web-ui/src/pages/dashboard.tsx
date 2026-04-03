@@ -1,13 +1,41 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import PptxGenJS from "pptxgenjs";
 import html2canvas from "html2canvas";
-import { DatePicker, Row, Col, Card, Tabs, Button, message } from "antd";
+import { DatePicker, Button, message } from "antd";
 import dayjs from "dayjs";
 import isoWeek from "dayjs/plugin/isoWeek";
 dayjs.extend(isoWeek);
 import api from "../services/Agent";
 import { useQuery } from "react-query";
 import { Pie } from "@ant-design/plots";
+
+/** Paleta centralizada del dashboard — cambiar aquí afecta todas las secciones */
+const DASHBOARD_THEME = {
+  /** Fondo de cada tarjeta / sección */
+  sectionBg: "#fff",
+  /** Color de los títulos de sección */
+  titleColor: "#00684d",
+  /** Fondo de la slide en el PPT (hex sin #) */
+  slideBgHex: "FFFFFF",
+  /** Estilo del renglón de fecha (aplica a todas las secciones) */
+  dateStyle: {
+    background: "#fff",
+    color: "#989898",
+    padding: "6px 0",
+    textAlign: "left" as const,
+    borderRadius: 4,
+    fontSize: 12,
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  /** Estilo de los títulos de sección (aplica a todas las secciones) */
+  titleStyle: {
+    color: "#00684d",
+    fontWeight: 700,
+    fontSize: 32,
+    textAlign: "left",
+  },
+} as const;
 
 const DashboardPage: React.FC = () => {
   const [selectedDates, setSelectedDates] = useState<
@@ -94,10 +122,6 @@ const DashboardPage: React.FC = () => {
     },
   ];
 
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const chartRefs = pieConfigs.map(() => useRef<HTMLDivElement>(null));
-  const hiddenChartsContainerRef = useRef<HTMLDivElement>(null);
-
   const getPieConfig = (data: any[]) => ({
     appendPadding: 10,
     data,
@@ -116,6 +140,50 @@ const DashboardPage: React.FC = () => {
     return [today.startOf("isoWeek"), today.endOf("isoWeek")];
   };
 
+  // Formatear la fecha seleccionada
+  const meses = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+  ];
+  let fechaRango = "";
+  if (selectedDates && selectedDates[0] && selectedDates[1]) {
+    const inicio = selectedDates[0];
+    const fin = selectedDates[1];
+    const diaInicio = inicio.format("DD");
+    const mesInicio = meses[inicio.month()];
+    const diaFin = fin.format("DD");
+    const mesFin = meses[fin.month()];
+    const anio = fin.format("YYYY");
+    if (mesInicio === mesFin) {
+      fechaRango = `${mesInicio.charAt(0).toUpperCase() + mesInicio.slice(1)} ${diaInicio} a ${diaFin} de ${anio}`;
+    } else {
+      fechaRango = `${mesInicio.charAt(0).toUpperCase() + mesInicio.slice(1)} ${diaInicio} a ${mesFin.charAt(0).toUpperCase() + mesFin.slice(1)} ${diaFin} de ${anio}`;
+    }
+  }
+
+  // Títulos personalizados por sección
+  const seccionTitulos = [
+    {
+      titulo: "Comportamiento y temáticas principales",
+      color: DASHBOARD_THEME.titleColor,
+    },
+    {
+      titulo: "Publicaciones y audiencia por\nsentimiento",
+      color: DASHBOARD_THEME.titleColor,
+    },
+  ];
+
+  // Contenido principal
   let content;
   if (isLoading) {
     content = <div>Cargando datos...</div>;
@@ -123,39 +191,102 @@ const DashboardPage: React.FC = () => {
     content = <div>Error al cargar datos</div>;
   } else {
     content = (
-      <>
-        {/* Secciones fijas debajo del carrusel */}
-        <div id="dashboard-fixed-sections">
-          {pieConfigs.map((cfg, idx) => (
-            <div
-              key={cfg.title}
-              style={{
-                margin: "32px auto",
-                maxWidth: 960,
-                background: "#fff",
-                borderRadius: 8,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                padding: 24,
-              }}
-            >
-              <Pie
-                {...getPieConfig(cfg.data)}
-                style={{ width: 640, height: 360, margin: "0 auto" }}
-              />
+      <div id="dashboard-fixed-sections">
+        {pieConfigs.map((cfg, idx) => (
+          <div
+            key={cfg.title}
+            style={{
+              margin: "32px auto",
+              width: 960,
+              height: 540,
+              background: DASHBOARD_THEME.sectionBg,
+              borderRadius: 8,
+              padding: 24,
+              boxSizing: "border-box",
+              overflow: "hidden",
+            }}
+          >
+            {/* Renglón de fecha */}
+            {fechaRango && (
+              <div style={DASHBOARD_THEME.dateStyle}>{fechaRango}</div>
+            )}
+            {/* Título personalizado */}
+            <div style={DASHBOARD_THEME.titleStyle}>
+              {seccionTitulos[idx]?.titulo || cfg.title}
+            </div>
+            {/* Renglón de resumen (solo primera sección) */}
+            {idx === 0 && (
               <div
                 style={{
-                  textAlign: "center",
-                  marginTop: 12,
-                  fontWeight: 600,
-                  fontSize: 18,
+                  display: "flex",
+                  height: 70,
+                  borderRadius: 6,
+                  overflow: "hidden",
+                  marginTop: 4,
                 }}
               >
-                {cfg.title}
+                {/* 1/5 — Publicaciones */}
+                <div
+                  style={{
+                    flex: 1,
+                    background: "#3c357b",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "#fff",
+                      fontSize: 36,
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {notes?.length ?? 0}
+                  </span>
+                  <span
+                    style={{
+                      color: "#fff",
+                      fontSize: 14,
+                      fontWeight: 500,
+                      marginTop: 4,
+                    }}
+                  >
+                    Publicaciones
+                  </span>
+                </div>
+                {/* Sección verde */}
+                <div
+                  style={{
+                    flex: 3,
+                    background: "#00b050",
+                    marginLeft: 4,
+                    marginRight: 4,
+                  }}
+                />
+                {/* Sección gris */}
+                <div
+                  style={{
+                    flex: 1,
+                    background: "#595959",
+                  }}
+                />
               </div>
-            </div>
-          ))}
-        </div>
-      </>
+            )}
+            <Pie
+              {...getPieConfig(cfg.data)}
+              style={{
+                width: 640,
+                height: 360,
+                margin: "0 auto",
+                background: DASHBOARD_THEME.sectionBg,
+              }}
+            />
+          </div>
+        ))}
+      </div>
     );
   }
 
@@ -167,23 +298,8 @@ const DashboardPage: React.FC = () => {
     }
     try {
       const pptx = new PptxGenJS();
-      // 1. Capturar la gráfica visible del carrusel
-      const carouselDiv = chartRefs[carouselIndex]?.current;
-      if (carouselDiv) {
-        const slide = pptx.addSlide();
-        await new Promise((res) => setTimeout(res, 300));
-        const canvas = await html2canvas(carouselDiv, {
-          backgroundColor: "#fff",
-          useCORS: true,
-          width: 960,
-          height: 540,
-          scale: 1,
-        });
-        const imgData = canvas.toDataURL("image/png");
-        slide.addImage({ data: imgData, x: 0, y: 0, w: 10, h: 5.625 });
-      }
 
-      // 2. Capturar las secciones fijas (todas las gráficas debajo del carrusel)
+      // Capturar las secciones fijas visibles
       const fixedSections = document.querySelectorAll(
         "#dashboard-fixed-sections > div",
       );
@@ -191,9 +307,10 @@ const DashboardPage: React.FC = () => {
         const sectionDiv = fixedSections[i] as HTMLDivElement;
         if (sectionDiv) {
           const slide = pptx.addSlide();
+          slide.background = { color: DASHBOARD_THEME.slideBgHex };
           await new Promise((res) => setTimeout(res, 300));
           const canvas = await html2canvas(sectionDiv, {
-            backgroundColor: "#fff",
+            backgroundColor: DASHBOARD_THEME.sectionBg,
             useCORS: true,
             width: 960,
             height: 540,
@@ -204,9 +321,10 @@ const DashboardPage: React.FC = () => {
         }
       }
 
-      await pptx.writeFile("dashboard-notas.pptx");
+      await pptx.writeFile({ fileName: "dashboard-notas.pptx" });
       message.success("Presentación descargada correctamente");
     } catch (err) {
+      console.error(err);
       message.error("Error al generar la presentación");
     }
   };
