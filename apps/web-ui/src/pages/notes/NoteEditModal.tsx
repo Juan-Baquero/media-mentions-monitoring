@@ -102,13 +102,13 @@ const NoteEditModal: React.FC<NoteEditModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="variables" label="Variables">
+            <Form.Item name="topic" label="Variables">
               <Input />
             </Form.Item>
-            <Form.Item name="topic" label="Tema">
+            <Form.Item name="subtopic" label="Tema">
               <Input />
             </Form.Item>
-            <Form.Item name="subtopics" label="Subtemas">
+            <Form.Item name="subsubtopic" label="Subtemas">
               <Input />
             </Form.Item>
             <Form.Item name="origin" label="Origen">

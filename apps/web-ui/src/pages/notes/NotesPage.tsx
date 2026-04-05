@@ -129,9 +129,9 @@ const NotesPage: React.FC = () => {
     Feha: "date",
     "TIPO DE MEDIO": "media",
     Medio: "mediaName",
-    VARIABLES: "variables",
-    Tema: "topic",
-    Subtemas: "subtopics",
+    VARIABLES: "topic", // ← Sin espacio
+    Tema: "subtopic",
+    Subtemas: "subsubtopic",
     Origen: "origin",
     DEPARTAMENTO: "department",
     Zona: "zone",
@@ -149,13 +149,25 @@ const NotesPage: React.FC = () => {
     if (!workbookRef.current) return;
     setLoading(true);
     const notes: any[] = [];
+
     selectedSheets.forEach((sheetName) => {
       const ws = workbookRef.current!.Sheets[sheetName];
       const json: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
       json.forEach((row, rowIdx) => {
+        // Trim a todas las keys del row
+        const trimmedRow = Object.keys(row).reduce(
+          (acc, key) => {
+            acc[key.trim()] = row[key];
+            return acc;
+          },
+          {} as Record<string, any>,
+        );
+
         const note: Record<string, any> = {};
         Object.entries(columnMap).forEach(([col, key]) => {
-          let value = row[col] ?? "";
+          let value = trimmedRow[col] ?? "";
+
           // Si la columna es fecha, formatear a YYYY-MM-DD
           if (key === "date" && value) {
             if (typeof value === "number") {
@@ -169,24 +181,26 @@ const NotesPage: React.FC = () => {
               value = d.isValid() ? d.format("YYYY-MM-DD") : value;
             }
           }
+
           // Si la columna es LINK, buscar el hipervínculo real si existe
           if (key === "link") {
-            // Buscar el hipervínculo en la hoja de Excel
-            const ws = workbookRef.current!.Sheets[sheetName];
             const cellAddress = XLSX.utils.encode_cell({
               r: rowIdx + 1,
-              c: Object.keys(row).indexOf(col),
+              c: Object.keys(trimmedRow).indexOf(col),
             });
             const cell = ws[cellAddress];
             if (cell && cell.l && cell.l.Target) {
               value = cell.l.Target;
             }
           }
+
           note[key] = value;
         });
+
         notes.push(note);
       });
     });
+
     try {
       await api.post("/notes/import-excel", notes);
       message.success("Notas importadas correctamente");

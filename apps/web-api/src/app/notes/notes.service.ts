@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
-import { NoteDto, DashboardDataDto, NoteOrigin } from '@repo/shared';
+import {
+  NoteDto,
+  DashboardDataDto,
+  NoteOrigin,
+  NoteSentiment,
+} from '@repo/shared';
 import { Note } from '../entities';
 import { InjectDataSource } from '@nestjs/typeorm';
 import * as moment from 'moment';
@@ -207,6 +212,58 @@ export class NotesService {
     const sentimentData = Object.entries(sentimentCounts).map(
       ([type, value]) => ({ type, value }),
     );
+    // --- tableData: agrupado por subtopic ---
+    const tableDataMap = new Map<
+      string,
+      {
+        topic: string;
+        subtopic: string;
+        audience: number;
+        totalNotes: number;
+        [NoteSentiment.POSITIVO]: number;
+        [NoteSentiment.NEGATIVO]: number;
+        [NoteSentiment.NEUTRO]: number;
+      }
+    >();
+
+    for (const n of notes) {
+      const subtopic = (n.subtopic || 'Sin subtopic').trim();
+      const key = subtopic.toLowerCase();
+
+      if (!tableDataMap.has(key)) {
+        tableDataMap.set(key, {
+          topic: n.topic || 'Sin topic',
+          subtopic,
+          audience: 0,
+          totalNotes: 0,
+          [NoteSentiment.POSITIVO]: 0,
+          [NoteSentiment.NEGATIVO]: 0,
+          [NoteSentiment.NEUTRO]: 0,
+        });
+      }
+
+      const row = tableDataMap.get(key)!;
+      row.audience += Number(n.audience ?? 0);
+
+      if (n.sentiment === NoteSentiment.POSITIVO) {
+        row[NoteSentiment.POSITIVO] += 1;
+      } else if (n.sentiment === NoteSentiment.NEGATIVO) {
+        row[NoteSentiment.NEGATIVO] += 1;
+      } else {
+        row[NoteSentiment.NEUTRO] += 1;
+      }
+      row.totalNotes += 1;
+    }
+
+    const tableData = Array.from(tableDataMap.values())
+      .map((row) => ({
+        ...row,
+        [NoteSentiment.POSITIVO]: String(row[NoteSentiment.POSITIVO]),
+        [NoteSentiment.NEGATIVO]: String(row[NoteSentiment.NEGATIVO]),
+        [NoteSentiment.NEUTRO]: String(row[NoteSentiment.NEUTRO]),
+        totalNotes: row.totalNotes,
+      }))
+      .sort((a, b) => b.audience - a.audience);
 
     // --- Sección 2: Tipo de medio ---
     const mediaCounts: Record<string, number> = {};
@@ -226,6 +283,7 @@ export class NotesService {
           .length,
         indirectNotes: notes.filter((n) => n.origin === NoteOrigin.INDIRECTA)
           .length,
+        tableData,
         sentimentData,
       },
       sentiment: {

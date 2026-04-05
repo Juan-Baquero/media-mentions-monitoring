@@ -45,13 +45,13 @@ export class Note {
   mediaName!: string;
 
   @Column()
-  variables!: string;
-
-  @Column()
   topic!: string;
 
   @Column()
-  subtopics!: string;
+  subtopic!: string;
+
+  @Column()
+  subsubtopic!: string;
 
   @Column()
   origin!: string;

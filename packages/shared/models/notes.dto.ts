@@ -15,7 +15,8 @@ export class NoteDto {
   readonly alert_id?: string;
   readonly date?: string;
   readonly topic?: string;
-  readonly subtopics?: string;
+  readonly subtopic?: string;
+  readonly subsubtopic?: string;
   readonly origin?: string;
   readonly department?: string;
   readonly zone?: string;

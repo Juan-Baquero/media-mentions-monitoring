@@ -9,15 +9,36 @@ import type { SectionBehaviorProps } from "./types";
  */
 const SectionBehavior: React.FC<SectionBehaviorProps> = ({
   dateRange,
-  behaviorData: { sentimentData, totalNotes, directNotes, indirectNotes },
+  behaviorData: {
+    sentimentData,
+    totalNotes,
+    directNotes,
+    indirectNotes,
+    tableData,
+  },
 }) => {
   const directPct =
     totalNotes > 0 ? ((directNotes / totalNotes) * 100).toFixed(1) : "0.0";
   const indirectPct =
     totalNotes > 0 ? ((indirectNotes / totalNotes) * 100).toFixed(1) : "0.0";
+  const sentimentColumns = Array.from(
+    new Set(
+      tableData.flatMap((row) =>
+        Object.keys(row).filter(
+          (key) => !["topic", "subtopic", "audience"].includes(key),
+        ),
+      ),
+    ),
+  );
 
   return (
-    <div style={DASHBOARD_THEME.sectionContainer}>
+    <div
+      style={{
+        ...DASHBOARD_THEME.sectionContainer,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {/* Renglón de fecha */}
       {dateRange && <div style={DASHBOARD_THEME.dateStyle}>{dateRange}</div>}
       {/* Título */}
@@ -172,16 +193,157 @@ const SectionBehavior: React.FC<SectionBehaviorProps> = ({
         </div>
       </div>
 
-      {/* Gráfico pie de sentimiento */}
-      <Pie
-        {...getPieConfig(sentimentData)}
+      <div
         style={{
-          width: 640,
-          height: 360,
-          margin: "0 auto",
-          background: DASHBOARD_THEME.sectionBg,
+          display: "flex",
+          gap: 12,
+          marginTop: 12,
+          alignItems: "flex-start",
         }}
-      />
+      >
+        <div
+          style={{
+            flex: 1,
+            border: "1px solid #d9d9d9",
+            borderRadius: 6,
+            overflow: "visible",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: 10,
+                color: "#4d4d4d",
+              }}
+            >
+              <thead>
+                <tr style={{ background: "#f5f5f5" }}>
+                  <th
+                    style={{
+                      textAlign: "left",
+                      padding: "5px 6px",
+                      borderBottom: "1px solid #e8e8e8",
+                    }}
+                  >
+                    Topic
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "left",
+                      padding: "5px 6px",
+                      borderBottom: "1px solid #e8e8e8",
+                    }}
+                  >
+                    Subtopic
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "right",
+                      padding: "5px 6px",
+                      borderBottom: "1px solid #e8e8e8",
+                    }}
+                  >
+                    Audiencia
+                  </th>
+                  {sentimentColumns.map((column) => (
+                    <th
+                      key={column}
+                      style={{
+                        textAlign: "right",
+                        padding: "5px 6px",
+                        borderBottom: "1px solid #e8e8e8",
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {column}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {tableData.map((row, index) => (
+                  <tr key={`${row.topic}-${row.subtopic}-${index}`}>
+                    <td
+                      style={{
+                        padding: "4px 6px",
+                        borderBottom: "1px solid #f0f0f0",
+                      }}
+                    >
+                      {row.topic}
+                    </td>
+                    <td
+                      style={{
+                        padding: "4px 6px",
+                        borderBottom: "1px solid #f0f0f0",
+                      }}
+                    >
+                      {row.subtopic}
+                    </td>
+                    <td
+                      style={{
+                        textAlign: "right",
+                        padding: "4px 6px",
+                        borderBottom: "1px solid #f0f0f0",
+                      }}
+                    >
+                      {row.audience}
+                    </td>
+                    {sentimentColumns.map((column) => (
+                      <td
+                        key={`${row.subtopic}-${column}-${index}`}
+                        style={{
+                          textAlign: "right",
+                          padding: "4px 6px",
+                          borderBottom: "1px solid #f0f0f0",
+                        }}
+                      >
+                        {String(row[column as keyof typeof row] ?? 0)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+                {tableData.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={3 + sentimentColumns.length}
+                      style={{
+                        padding: "10px 6px",
+                        textAlign: "center",
+                        color: "#4d4d4d",
+                      }}
+                    >
+                      No hay datos para mostrar
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "stretch",
+            justifyContent: "center",
+            background: DASHBOARD_THEME.sectionBg,
+          }}
+        >
+          <Pie
+            {...getPieConfig(sentimentData)}
+            style={{
+              width: "100%",
+              height: "100%",
+              background: DASHBOARD_THEME.sectionBg,
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 };
