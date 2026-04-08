@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { NotesService } from './notes.service';
-import { NoteDto, DashboardDataDto } from '@repo/shared';
+import { NoteDto, DashboardDataDto, DashboardPeriod } from '@repo/shared';
 
 @Controller('notes')
 export class NotesController {
@@ -92,12 +92,18 @@ export class NotesController {
 
   @Post('dashboard')
   async getDashboardData(
-    @Body() body: { startDate: string; endDate: string },
+    @Body()
+    body: {
+      startDate: string;
+      endDate: string;
+      period?: DashboardPeriod;
+    },
   ): Promise<DashboardDataDto> {
     try {
       return await this.notesService.getDashboardData(
         body.startDate,
         body.endDate,
+        body.period,
       );
     } catch (error) {
       throw new HttpException(

@@ -4,12 +4,15 @@
 import {
   DashboardBehaviorSection,
   DashboardSentimentSection,
+  DashboardPeriod,
 } from "@repo/shared";
 
 /** Props base que reciben todas las secciones del dashboard */
 export interface DashboardSectionProps {
   /** Texto del rango de fechas formateado, e.g. "Abril 01 a 07 de 2026" */
   dateRange: string;
+  /** Período seleccionado */
+  period: DashboardPeriod;
 }
 
 /** Props de la sección "Comportamiento y temáticas principales" */

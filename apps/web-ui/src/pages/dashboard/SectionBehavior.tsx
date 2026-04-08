@@ -1,5 +1,6 @@
 import React from "react";
 import { Pie } from "@ant-design/plots";
+import { ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 import { DASHBOARD_THEME, getPieConfig } from "./DashboardTheme";
 import type { SectionBehaviorProps } from "./types";
 
@@ -9,18 +10,40 @@ import type { SectionBehaviorProps } from "./types";
  */
 const SectionBehavior: React.FC<SectionBehaviorProps> = ({
   dateRange,
+  period,
   behaviorData: {
     sentimentData,
     totalNotes,
     directNotes,
     indirectNotes,
     tableData,
+    comparisonDirectPercentage,
   },
 }) => {
   const directPct =
     totalNotes > 0 ? ((directNotes / totalNotes) * 100).toFixed(1) : "0.0";
   const indirectPct =
     totalNotes > 0 ? ((indirectNotes / totalNotes) * 100).toFixed(1) : "0.0";
+
+  const getPeriodLabel = (p: typeof period): string => {
+    const labels: Record<typeof period, string> = {
+      semana: "semana",
+      mes: "mes",
+      trimestre: "trimestre",
+      anual: "año",
+    };
+    return labels[p];
+  };
+
+  const getArrow = (comparison?: number): React.ReactNode => {
+    if (comparison === undefined || comparison === 0) return null;
+    return comparison > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />;
+  };
+
+  const comparisonValue = comparisonDirectPercentage ?? 0;
+  const comparisonText =
+    comparisonValue === 0 ? "" : Math.abs(comparisonValue).toFixed(1) + "%";
+
   const sentimentColumns = Array.from(
     new Set(
       tableData.flatMap((row) =>
@@ -181,11 +204,19 @@ const SectionBehavior: React.FC<SectionBehaviorProps> = ({
               padding: "8px 6px",
             }}
           >
-            <div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1 }}>
-              ⬆ 12.5%
-            </div>
+            {comparisonText && (
+              <div
+                style={{
+                  fontSize: 34,
+                  fontWeight: 900,
+                  lineHeight: 1,
+                }}
+              >
+                {getArrow(comparisonValue)} {comparisonText}
+              </div>
+            )}
             <div style={{ fontSize: 13, marginTop: 6 }}>
-              vs. semana anterior
+              vs. {getPeriodLabel(period)} anterior
             </div>
           </div>
         </div>

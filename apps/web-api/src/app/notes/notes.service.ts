@@ -4,6 +4,7 @@ import { ObjectId } from 'mongodb';
 import {
   NoteDto,
   DashboardDataDto,
+  DashboardPeriod,
   NoteOrigin,
   NoteSentiment,
 } from '@repo/shared';
@@ -194,14 +195,95 @@ export class NotesService {
   }
 
   /**
+   * Calcula el rango de fechas del período anterior
+   */
+  private getPreviousPeriodRange(
+    startDate: string,
+    period: DashboardPeriod,
+  ): [string, string] {
+    const start = moment(startDate, 'YYYY-MM-DD');
+
+    if (period === 'semana') {
+      const prevStart = start.clone().subtract(1, 'week').startOf('isoWeek');
+      const prevEnd = prevStart.clone().endOf('isoWeek');
+      return [prevStart.format('YYYY-MM-DD'), prevEnd.format('YYYY-MM-DD')];
+    }
+
+    if (period === 'mes') {
+      const prevStart = start.clone().subtract(1, 'month').startOf('month');
+      const prevEnd = prevStart.clone().endOf('month');
+      return [prevStart.format('YYYY-MM-DD'), prevEnd.format('YYYY-MM-DD')];
+    }
+
+    if (period === 'trimestre') {
+      const quarterStartMonth = Math.floor(start.month() / 3) * 3;
+      const quarterStart = start
+        .clone()
+        .month(quarterStartMonth)
+        .startOf('month');
+      const prevEnd = quarterStart.clone().subtract(1, 'day');
+      const prevQuarterStartMonth = Math.floor(prevEnd.month() / 3) * 3;
+      const prevStart = prevEnd
+        .clone()
+        .month(prevQuarterStartMonth)
+        .startOf('month');
+      return [prevStart.format('YYYY-MM-DD'), prevEnd.format('YYYY-MM-DD')];
+    }
+
+    // anual
+    const prevStart = start.clone().subtract(1, 'year').startOf('year');
+    const daysDiff = start.diff(start.clone().startOf('year'), 'days');
+    const prevEnd = prevStart.clone().add(daysDiff, 'days');
+    return [prevStart.format('YYYY-MM-DD'), prevEnd.format('YYYY-MM-DD')];
+  }
+
+  /**
+   * Calcula el porcentaje de publicaciones directas para comparación
+   */
+  private calculateDirectPercentage(
+    directNotes: number,
+    totalNotes: number,
+  ): number {
+    if (totalNotes === 0) return 0;
+    return (directNotes / totalNotes) * 100;
+  }
+
+  /**
    * Calcula los datos agrupados del dashboard por sección.
    * Evita enviar toda la lista de notas al frontend.
    */
   async getDashboardData(
     startDate: string,
     endDate: string,
+    period: DashboardPeriod = 'semana',
   ): Promise<DashboardDataDto> {
     const notes = await this.listNotesByDateRange(startDate, endDate);
+
+    // --- Obtener datos del período anterior para comparación ---
+    const [prevStartDate, prevEndDate] = this.getPreviousPeriodRange(
+      startDate,
+      period,
+    );
+    const prevNotes = await this.listNotesByDateRange(
+      prevStartDate,
+      prevEndDate,
+    );
+    const prevTotalNotes = prevNotes.length;
+    const prevDirectNotes = prevNotes.filter(
+      (n) => n.origin === NoteOrigin.DIRECTA,
+    ).length;
+
+    // --- Calcular porcentajes de publicaciones directas ---
+    const currentDirectPercentage = this.calculateDirectPercentage(
+      notes.filter((n) => n.origin === NoteOrigin.DIRECTA).length,
+      notes.length,
+    );
+    const prevDirectPercentage = this.calculateDirectPercentage(
+      prevDirectNotes,
+      prevTotalNotes,
+    );
+    const comparisonDirectPercentage =
+      currentDirectPercentage - prevDirectPercentage;
 
     // --- Sección 1: Comportamiento (sentimiento) ---
     const sentimentCounts: Record<string, number> = {};
@@ -281,6 +363,7 @@ export class NotesService {
     }));
 
     return {
+      period,
       behavior: {
         totalNotes: notes.length,
         directNotes: notes.filter((n) => n.origin === NoteOrigin.DIRECTA)
@@ -289,6 +372,7 @@ export class NotesService {
           .length,
         tableData,
         sentimentData,
+        comparisonDirectPercentage,
       },
       sentiment: {
         mediaData,

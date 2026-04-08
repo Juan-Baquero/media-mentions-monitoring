@@ -1,24 +1,50 @@
 import React, { useState, useEffect } from "react";
 import PptxGenJS from "pptxgenjs";
 import html2canvas from "html2canvas";
-import { DatePicker, Button, message } from "antd";
+import { DatePicker, Button, message, Select } from "antd";
 import dayjs from "dayjs";
 import isoWeek from "dayjs/plugin/isoWeek";
 dayjs.extend(isoWeek);
 import api from "../../services/Agent";
 import { useQuery } from "react-query";
-import type { DashboardDataDto } from "@repo/shared";
+import type { DashboardDataDto, DashboardPeriod } from "@repo/shared";
 
 import { DASHBOARD_THEME } from "./DashboardTheme";
 import SectionBehavior from "./SectionBehavior";
 import SectionSentiment from "./SectionSentiment";
 
 const DashboardPage: React.FC = () => {
+  const [selectedPeriod, setSelectedPeriod] =
+    useState<DashboardPeriod>("semana");
   const [selectedDates, setSelectedDates] = useState<
     [dayjs.Dayjs | null, dayjs.Dayjs | null] | null
   >(null);
   const [minDate, setMinDate] = useState<string | null>(null);
   const [maxDate, setMaxDate] = useState<string | null>(null);
+
+  const getRangeForPeriod = (
+    period: DashboardPeriod,
+    maxDateValue: string,
+  ): [dayjs.Dayjs, dayjs.Dayjs] => {
+    const max = dayjs(maxDateValue, "YYYY-MM-DD");
+
+    if (period === "semana") {
+      return [max.startOf("isoWeek"), max.endOf("isoWeek")];
+    }
+
+    if (period === "mes") {
+      return [max.startOf("month"), max.endOf("month")];
+    }
+
+    if (period === "trimestre") {
+      const quarterStartMonth = Math.floor(max.month() / 3) * 3;
+      const quarterStart = max.month(quarterStartMonth).startOf("month");
+      const quarterEnd = quarterStart.add(2, "month").endOf("month");
+      return [quarterStart, quarterEnd];
+    }
+
+    return [max.startOf("year"), max];
+  };
 
   useEffect(() => {
     const fetchDates = async () => {
@@ -26,10 +52,6 @@ const DashboardPage: React.FC = () => {
         const res = await api.post("/notes/dates", {});
         setMinDate(res.data.minDate);
         setMaxDate(res.data.maxDate);
-        if (res.data.maxDate) {
-          const max = dayjs(res.data.maxDate, "YYYY-MM-DD");
-          setSelectedDates([max.startOf("isoWeek"), max.endOf("isoWeek")]);
-        }
       } catch {
         setMinDate(null);
         setMaxDate(null);
@@ -38,18 +60,38 @@ const DashboardPage: React.FC = () => {
     fetchDates();
   }, []);
 
+  useEffect(() => {
+    if (!maxDate) return;
+    setSelectedDates(getRangeForPeriod(selectedPeriod, maxDate));
+  }, [maxDate, selectedPeriod]);
+
   const {
     data: dashboardData,
     isLoading,
     error,
-    refetch,
   } = useQuery<DashboardDataDto | null>(
-    ["dashboard", selectedDates],
+    ["dashboard", selectedDates, selectedPeriod],
     async () => {
       if (!(selectedDates?.[0] && selectedDates?.[1])) return null;
+
+      const maxDataDate = maxDate ? dayjs(maxDate, "YYYY-MM-DD") : null;
+      const startRequestDate =
+        selectedPeriod === "semana"
+          ? selectedDates[0]
+          : selectedDates[0].startOf("month");
+      const rawEndRequestDate =
+        selectedPeriod === "semana"
+          ? selectedDates[1]
+          : selectedDates[1].endOf("month");
+      const endRequestDate =
+        maxDataDate && rawEndRequestDate.isAfter(maxDataDate)
+          ? maxDataDate
+          : rawEndRequestDate;
+
       const res = await api.post("/notes/dashboard", {
-        startDate: selectedDates[0]?.format("YYYY-MM-DD"),
-        endDate: selectedDates[1]?.format("YYYY-MM-DD"),
+        startDate: startRequestDate.format("YYYY-MM-DD"),
+        endDate: endRequestDate.format("YYYY-MM-DD"),
+        period: selectedPeriod,
       });
       return res.data as DashboardDataDto;
     },
@@ -60,7 +102,12 @@ const DashboardPage: React.FC = () => {
     dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null,
   ) => {
     setSelectedDates(dates);
-    refetch();
+  };
+
+  const handlePeriodChange = (period: DashboardPeriod) => {
+    setSelectedPeriod(period);
+    if (!maxDate) return;
+    setSelectedDates(getRangeForPeriod(period, maxDate));
   };
 
   // ---------- Fecha formateada ----------
@@ -68,6 +115,24 @@ const DashboardPage: React.FC = () => {
   const getCurrentWeek = (): [dayjs.Dayjs, dayjs.Dayjs] => {
     const today = dayjs();
     return [today.startOf("isoWeek"), today.endOf("isoWeek")];
+  };
+
+  const getNormalizedDateRange = (): [dayjs.Dayjs, dayjs.Dayjs] | null => {
+    if (!selectedDates?.[0] || !selectedDates?.[1]) return null;
+
+    const maxDataDate = maxDate ? dayjs(maxDate, "YYYY-MM-DD") : null;
+    const startDate =
+      selectedPeriod === "semana"
+        ? selectedDates[0]
+        : selectedDates[0].startOf("month");
+    const rawEndDate =
+      selectedPeriod === "semana"
+        ? selectedDates[1]
+        : selectedDates[1].endOf("month");
+    const endDate =
+      maxDataDate && rawEndDate.isAfter(maxDataDate) ? maxDataDate : rawEndDate;
+
+    return [startDate, endDate];
   };
 
   const meses = [
@@ -86,9 +151,9 @@ const DashboardPage: React.FC = () => {
   ];
 
   let fechaRango = "";
-  if (selectedDates?.[0] && selectedDates?.[1]) {
-    const inicio = selectedDates[0];
-    const fin = selectedDates[1];
+  const normalizedRange = getNormalizedDateRange();
+  if (normalizedRange) {
+    const [inicio, fin] = normalizedRange;
     const diaInicio = inicio.format("DD");
     const mesInicio = meses[inicio.month()];
     const diaFin = fin.format("DD");
@@ -152,11 +217,13 @@ const DashboardPage: React.FC = () => {
         {dashboardData?.behavior && (
           <SectionBehavior
             dateRange={fechaRango}
+            period={selectedPeriod}
             behaviorData={dashboardData.behavior}
           />
         )}
         <SectionSentiment
           dateRange={fechaRango}
+          period={selectedPeriod}
           mediaData={dashboardData?.sentiment.mediaData ?? []}
         />
       </div>
@@ -173,26 +240,51 @@ const DashboardPage: React.FC = () => {
           marginBottom: 24,
         }}
       >
-        <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Select<DashboardPeriod>
+            value={selectedPeriod}
+            onChange={handlePeriodChange}
+            style={{ minWidth: 140 }}
+            options={[
+              { value: "semana", label: "Semana" },
+              { value: "mes", label: "Mes" },
+              { value: "trimestre", label: "Trimestre" },
+              { value: "anual", label: "Anual" },
+            ]}
+          />
           <DatePicker.RangePicker
             value={selectedDates}
             onChange={handleDateChange}
+            picker={selectedPeriod === "semana" ? "date" : "month"}
+            format={selectedPeriod === "semana" ? "YYYY-MM-DD" : "YYYY-MM"}
             style={{ minWidth: 240 }}
             allowClear={false}
             disabledDate={(current) => {
               if (!minDate || !maxDate) return false;
               const min = dayjs(minDate, "YYYY-MM-DD");
               const max = dayjs(maxDate, "YYYY-MM-DD");
+
+              if (selectedPeriod !== "semana") {
+                return (
+                  current.endOf("month").isBefore(min, "day") ||
+                  current.startOf("month").isAfter(max, "day")
+                );
+              }
+
               return current < min || current > max;
             }}
-            renderExtraFooter={() => (
-              <button
-                style={{ width: "100%" }}
-                onClick={() => setSelectedDates(getCurrentWeek())}
-              >
-                Seleccionar semana actual
-              </button>
-            )}
+            renderExtraFooter={
+              selectedPeriod === "semana"
+                ? () => (
+                    <button
+                      style={{ width: "100%" }}
+                      onClick={() => setSelectedDates(getCurrentWeek())}
+                    >
+                      Seleccionar semana actual
+                    </button>
+                  )
+                : undefined
+            }
           />
         </div>
         <div>

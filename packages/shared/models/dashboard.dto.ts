@@ -2,6 +2,8 @@
 
 import { NoteSentiment } from "./note.enum";
 
+export type DashboardPeriod = "semana" | "mes" | "trimestre" | "anual";
+
 export interface ChartDataItem {
   type: string;
   value: number;
@@ -24,6 +26,8 @@ export interface DashboardBehaviorSection {
   indirectNotes: number;
   tableData: tableDataItem[];
   sentimentData: ChartDataItem[];
+  /** Porcentaje de diferencia en publicaciones directas vs período anterior */
+  comparisonDirectPercentage?: number;
 }
 
 /** Datos pre-calculados para la sección "Publicaciones y audiencia por sentimiento" */
@@ -33,6 +37,7 @@ export interface DashboardSentimentSection {
 
 /** Respuesta completa del endpoint /notes/dashboard */
 export interface DashboardDataDto {
+  period: DashboardPeriod;
   behavior: DashboardBehaviorSection;
   sentiment: DashboardSentimentSection;
 }
