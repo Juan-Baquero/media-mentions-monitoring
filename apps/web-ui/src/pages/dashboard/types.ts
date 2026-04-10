@@ -21,5 +21,6 @@ export interface SectionBehaviorProps extends DashboardSectionProps {
 }
 
 /** Props de la sección "Publicaciones y audiencia por sentimiento" */
-export interface SectionSentimentProps
-  extends DashboardSectionProps, DashboardSentimentSection {}
+export interface SectionSentimentProps extends DashboardSectionProps {
+  sentimentData: DashboardSentimentSection;
+}

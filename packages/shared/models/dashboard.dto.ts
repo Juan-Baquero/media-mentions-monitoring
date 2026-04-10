@@ -9,7 +9,7 @@ export interface ChartDataItem {
   value: number;
 }
 
-export interface tableDataItem {
+export interface TableDataItem {
   topic: string;
   subtopic: string;
   audience: number;
@@ -24,7 +24,7 @@ export interface DashboardBehaviorSection {
   totalNotes: number;
   directNotes: number;
   indirectNotes: number;
-  tableData: tableDataItem[];
+  tableData: TableDataItem[];
   sentimentData: ChartDataItem[];
   /** Porcentaje de diferencia en publicaciones directas vs período anterior */
   comparisonDirectPercentage?: number;
@@ -32,7 +32,8 @@ export interface DashboardBehaviorSection {
 
 /** Datos pre-calculados para la sección "Publicaciones y audiencia por sentimiento" */
 export interface DashboardSentimentSection {
-  mediaData: ChartDataItem[];
+  subTopicTop5: TableDataItem[];
+  tableByTopic: TableDataItem[];
 }
 
 /** Respuesta completa del endpoint /notes/dashboard */

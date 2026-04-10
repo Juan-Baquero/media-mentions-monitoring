@@ -351,16 +351,65 @@ export class NotesService {
       }))
       .sort((a, b) => b.totalNotes - a.totalNotes);
 
-    // --- Sección 2: Tipo de medio ---
-    const mediaCounts: Record<string, number> = {};
-    for (const n of notes) {
-      const key = n.media || 'Sin medio';
-      mediaCounts[key] = (mediaCounts[key] || 0) + 1;
-    }
-    const mediaData = Object.entries(mediaCounts).map(([type, value]) => ({
-      type,
-      value,
-    }));
+    // --- tableByTopic: agrupado por topic a partir de tableData ---
+    let tableByTopic = Object.values(
+      tableData.reduce(
+        (acc, row) => {
+          const key = row.topic.toLowerCase();
+          if (!acc[key]) {
+            acc[key] = { ...row, subtopic: '' };
+          } else {
+            acc[key].audience += row.audience;
+            acc[key].totalNotes += row.totalNotes;
+            acc[key][NoteSentiment.POSITIVO] = String(
+              Number(acc[key][NoteSentiment.POSITIVO]) +
+                Number(row[NoteSentiment.POSITIVO]),
+            );
+            acc[key][NoteSentiment.NEGATIVO] = String(
+              Number(acc[key][NoteSentiment.NEGATIVO]) +
+                Number(row[NoteSentiment.NEGATIVO]),
+            );
+            acc[key][NoteSentiment.NEUTRO] = String(
+              Number(acc[key][NoteSentiment.NEUTRO]) +
+                Number(row[NoteSentiment.NEUTRO]),
+            );
+          }
+          return acc;
+        },
+        {} as Record<string, (typeof tableData)[0] & { subtopic: string }>,
+      ),
+    ).sort((a, b) => b.totalNotes - a.totalNotes);
+
+    const tableByTopicTotal = tableByTopic.reduce(
+      (acc, row) => {
+        acc.audience += row.audience;
+        acc.totalNotes += row.totalNotes;
+        acc[NoteSentiment.POSITIVO] = String(
+          Number(acc[NoteSentiment.POSITIVO]) +
+            Number(row[NoteSentiment.POSITIVO]),
+        );
+        acc[NoteSentiment.NEGATIVO] = String(
+          Number(acc[NoteSentiment.NEGATIVO]) +
+            Number(row[NoteSentiment.NEGATIVO]),
+        );
+        acc[NoteSentiment.NEUTRO] = String(
+          Number(acc[NoteSentiment.NEUTRO]) + Number(row[NoteSentiment.NEUTRO]),
+        );
+        return acc;
+      },
+      {
+        topic: 'Total',
+        subtopic: '',
+        audience: 0,
+        totalNotes: 0,
+        [NoteSentiment.POSITIVO]: '0',
+        [NoteSentiment.NEGATIVO]: '0',
+        [NoteSentiment.NEUTRO]: '0',
+      },
+    );
+    tableByTopic = tableByTopic.sort((a, b) => a.totalNotes - b.totalNotes);
+
+    tableByTopic.push(tableByTopicTotal);
 
     return {
       period,
@@ -375,7 +424,10 @@ export class NotesService {
         comparisonDirectPercentage,
       },
       sentiment: {
-        mediaData,
+        subTopicTop5: tableData
+          .sort((a, b) => b.totalNotes - a.totalNotes)
+          .slice(0, 5),
+        tableByTopic,
       },
     };
   }

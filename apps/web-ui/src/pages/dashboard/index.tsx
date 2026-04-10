@@ -171,8 +171,7 @@ const DashboardPage: React.FC = () => {
   const handleExportPPTX = async () => {
     const hasSentiment =
       (dashboardData?.behavior.sentimentData.length ?? 0) > 0;
-    const hasMedia = (dashboardData?.sentiment.mediaData.length ?? 0) > 0;
-    if (!hasSentiment && !hasMedia) {
+    if (!hasSentiment) {
       message.warning("No hay datos para exportar");
       return;
     }
@@ -221,11 +220,13 @@ const DashboardPage: React.FC = () => {
             behaviorData={dashboardData.behavior}
           />
         )}
-        <SectionSentiment
-          dateRange={fechaRango}
-          period={selectedPeriod}
-          mediaData={dashboardData?.sentiment.mediaData ?? []}
-        />
+        {dashboardData?.sentiment && (
+          <SectionSentiment
+            dateRange={fechaRango}
+            period={selectedPeriod}
+            sentimentData={dashboardData.sentiment}
+          />
+        )}
       </div>
     );
   }
